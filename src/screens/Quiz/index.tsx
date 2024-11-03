@@ -10,6 +10,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { dataQuiz } from "./dummyData"
 import { supabase } from "@config/supabase"
 import Spinner from "react-native-loading-spinner-overlay"
+import { UserStore } from "@config/store"
 
 
 const QuizScreen = ({ route }) => {
@@ -17,12 +18,19 @@ const QuizScreen = ({ route }) => {
     const [selected, setSelected] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [dataSoal, setDataSoal] = useState<any>([]);
-    const [poin, setPoint] = useState(dataSoal.point)
+    const [poin, setPoint] = useState(0)
     const [loading, setLoading] = useState(true);
+    const [totalPage, setTotalPage] = useState<any>(0);
+    const { user } = UserStore();
+    const [hasil, setHasil] = useState(0);
+    const [jawaban, setJawaban] = useState<any>([]);
+
+
 
     const nextQuestion = () => {
-        if (currentIndex < dataQuiz.length - 1) {
+        if (currentIndex < totalPage - 1) {
             setCurrentIndex(currentIndex + 1);
+            jawaban?.[0]?.answer == undefined && selected != null && SendJawaban(dataSoal?.[0]?.id, user?.id, selected, hasil, route.params.code_soal)
             setSelected(null)
             setLoading(true)
         }
@@ -36,7 +44,7 @@ const QuizScreen = ({ route }) => {
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     useEffect(() => {
-        if (selected !== null) {
+        if (selected !== null || jawaban?.[0]?.answer != undefined) {
             fadeAnim.setValue(0);
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -44,39 +52,59 @@ const QuizScreen = ({ route }) => {
                 useNativeDriver: true,
             }).start();
         }
-    }, [selected]);
-    const handlePress = (index) => {
-        if (selected === index) return;
-        setSelected(index);
-    };
-    const CardComponent = ({ index, title }) => {
-        const isSelected = selected === index;
+    }, [selected, jawaban?.[0]?.answer]);
 
+    const handlePress = (index, answer) => {
+        if (selected === index) return;
+        index == answer ? setHasil(1) : setHasil(0);
+        setSelected(index);
+
+    };
+    const CardComponent = ({ index, title, answer }) => {
+        const isSelected = selected === index;
+        const isAnswer = index === answer;
+        console.log('mm', jawaban?.[0]?.answer == index);
         return (
-            <TouchableOpacity onPress={() => handlePress(index)}>
-                <Card size="md" variant="filled" style={styles.card}>
-                    <Heading mb="$1" size="md">
+            <TouchableOpacity onPress={() => handlePress(index, answer)} disabled={selected != null || jawaban?.[0]?.answer != undefined}>
+                <Card size="md" variant="filled" style={styles.card} >
+                    <Text mb="$1" size="lg" bold={jawaban?.[0]?.answer == index || isSelected} >
                         {title}
-                    </Heading>
-                    {isSelected && (
+                    </Text>
+                    <Animated.View style={[styles.iconContainer, { opacity: fadeAnim }]}>
+                        {isAnswer && <Ionicons name="checkmark-circle" size={24} color="green" />}
+                        {jawaban?.[0]?.answer == index && jawaban?.[0]?.answer != answer && <Ionicons name="close-sharp" size={24} color="red" />}
+                    </Animated.View>
+
+                    {(isSelected || isAnswer) && (
                         <Animated.View
                             style={[styles.iconContainer, { opacity: fadeAnim }]}>
-                            <Ionicons name="checkmark-circle" size={24} color="green" />
+                            {isAnswer && selected != null && (
+                                <Ionicons name="checkmark-circle" size={24} color="green" />
+                            )}
+                            {isSelected && !isAnswer && (
+                                <Ionicons name="close-sharp" size={24} color="red" />
+                            )}
+
                         </Animated.View>
                     )}
                 </Card>
-            </TouchableOpacity>
+            </TouchableOpacity >
         );
     };
 
     const getSelectedTitle = () => {
-        return selected !== null ? dataQuiz[currentIndex].pilihan[selected] : 'Tidak ada yang dipilih';
+        return selected !== null ? dataSoal[currentIndex].pilihan[selected] : 'Tidak ada yang dipilih';
     };
-    console.log(getSelectedTitle());
+
 
     useEffect(() => {
         const FetchSoal = async () => {
             try {
+                const { count } = await supabase
+                    .from('soal')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('code_soal', route.params.code_soal);
+
                 let page = currentIndex;
                 const itemsPerPage = 1;
                 const response = await supabase
@@ -85,9 +113,12 @@ const QuizScreen = ({ route }) => {
                     .eq('code_soal', route.params.code_soal)
                     .range((page) * itemsPerPage, page * itemsPerPage);
 
+
                 if (response.status == 200) {
+                    setTotalPage(count)
                     setDataSoal(response.data);
                     setLoading(false);
+                    setPoint(prevPoint => prevPoint + (response.data?.[0]?.point || 0));
                 }
             } catch {
                 console.log('Error fetching users');
@@ -114,6 +145,63 @@ const QuizScreen = ({ route }) => {
         };
     }, [currentIndex])
 
+    useEffect(() => {
+        const FetchJawaban = async () => {
+            try {
+                const { data, error, status } = await supabase
+                    .from('jawaban')
+                    .select('*')
+                    .eq('id_user', user?.id)
+                    .eq('id_soal', dataSoal?.[0]?.id)
+                    .eq('code_soal', route.params.code_soal);
+
+                if (status == 200) {
+                    setJawaban(data)
+                }
+
+            } catch (error) {
+                console.log('Error fetching jawaban');
+
+            }
+        }
+        FetchJawaban()
+    }, [dataSoal?.[0]?.id])
+
+
+
+    const SendJawaban = async (id_soal, id_user, answer, hasil, code_soal) => {
+        try {
+            const { data, error } = await supabase
+                .from('jawaban')
+                .insert([
+                    {
+                        id_soal,
+                        id_user,
+                        answer,
+                        hasil,
+                        code_soal
+                    }
+                ]);
+            if (error) {
+                console.error('Error inserting data:', error);
+                return null;
+            }
+
+            console.log('Data inserted successfully:', data);
+            return data;
+        } catch (error) {
+            console.log('Error fetching jawaban');
+            setLoading(false);
+
+        }
+    }
+
+    console.log('jawaban', jawaban?.[0]?.answer)
+    const submit = () => {
+        if (jawaban?.[0]?.answer == undefined && selected != null) {
+            SendJawaban(dataSoal?.[0]?.id, user?.id, selected, hasil, route.params.code_soal);
+        }
+    }
     return (
         <SafeAreaCustom>
             <Spinner
@@ -125,7 +213,7 @@ const QuizScreen = ({ route }) => {
                 <VStack space="xl">
                     <HStack justifyContent="space-between" alignItems="center"  >
                         <VStack>
-                            <CircularProgress value={20} radius={15} activeStrokeColor="#eab308" activeStrokeWidth={5} inActiveStrokeWidth={5} />
+                            <CircularProgress value={poin} radius={15} activeStrokeColor="#eab308" activeStrokeWidth={5} inActiveStrokeWidth={5} />
                         </VStack>
                         <TextHeading >{route.params.name}</TextHeading>
                         <HStack >
@@ -134,35 +222,34 @@ const QuizScreen = ({ route }) => {
                             </TouchableOpacity>
                         </HStack>
                     </HStack>
-                    {dataSoal.map((item, keys) => (
-                        <VStack key={keys} space="3xl">
-                            <VStack >
-                                <Card size="md" variant="elevated" bgColor='$purple400'>
-                                    <Heading mb="$1" size="md" color='white'>
-                                        Pertanyaan {currentIndex + 1}
-                                    </Heading>
-                                    <Text size="xl" color='white'>{item?.pertanyaan}</Text>
-                                </Card>
+                    {dataSoal.map((item, keys) => {
+                        return (
+                            <VStack key={keys} space="3xl">
+                                <VStack >
+                                    <Card size="md" variant="elevated" bgColor='$purple400'>
+                                        <Heading mb="$1" size="md" color='white'>
+                                            Pertanyaan {currentIndex + 1}
+                                        </Heading>
+                                        <Text size="xl" color='white'>{item?.pertanyaan}</Text>
+                                    </Card>
+                                </VStack>
+
+                                <VStack space="md">
+                                    {item?.pilihan.map((title, index) => (
+                                        <CardComponent key={index} index={index} title={title} answer={item?.jawaban} />
+                                    ))}
+                                </VStack>
                             </VStack>
-
-                            <VStack space="md">
-                                {item?.pilihan.map((title, index) => (
-                                    <CardComponent key={index} index={index} title={title} />
-                                ))}
-                            </VStack>
-
-
-                        </VStack>
-                    ))}
+                        )
+                    })}
                 </VStack>
             </View>
             <View marginHorizontal={16} marginVertical={16}>
                 {dataSoal.length > 0 &&
-                    <TouchableOpacity onPress={nextQuestion} style={{ padding: 10, backgroundColor: '#eab308', borderRadius: 10, justifyContent: 'flex-end' }}>
-                        <Text textAlign="center" color="white">Selanjutnya </Text>
+                    <TouchableOpacity disabled={selected == null && jawaban?.[0]?.answer == undefined} onPress={currentIndex + 1 == totalPage ? () => { submit(); navigation.navigate('StackNav', { screen: 'FinishScreen', params: { name: route.params.name, code_soal: route.params.code_soal, poin: poin } }) } : nextQuestion} style={{ padding: 10, backgroundColor: '#eab308', borderRadius: 10, justifyContent: 'flex-end' }}>
+                        <Text textAlign="center" color="white">{currentIndex + 1 == totalPage ? 'Selesai' : 'Selanjutnya'} </Text>
                     </TouchableOpacity>}
             </View>
-
         </SafeAreaCustom>
     )
 }

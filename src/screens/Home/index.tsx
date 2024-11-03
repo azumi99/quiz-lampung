@@ -45,6 +45,8 @@ const HomeScreen = () => {
   const { fcmtoken } = TokenFCMStore();
   const [maxBoxHeight, setMaxBoxHeight] = useState<number>(0);
   const { user } = UserStore();
+  const [totalPoin, setTotalPoin] = useState(0);
+  const [selesai, setSelesai] = useState<any>([]);
 
   const { tema, setTema } = TemaStore();
   console.log('tem', tema)
@@ -81,6 +83,57 @@ const HomeScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const FetchPoin = async () => {
+      try {
+        const { data, error, status } = await supabase
+          .from('poin')
+          .select('*')
+          .eq('id_user', user?.id)
+
+
+        if (status == 200) {
+          setSelesai(data);
+          if (data?.[0]?.poin == undefined) {
+            setTotalPoin(0)
+          } else {
+            const totalPoin = data.reduce((accumulator, value) => accumulator + (value.poin || 0), 0);
+            setTotalPoin(totalPoin);
+
+          }
+
+        }
+      } catch (error) {
+        console.log('error fetch poin')
+      }
+    }
+    FetchPoin()
+    const subscription = supabase
+      .channel('public:poin')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'poin' },
+        (payload) => {
+          console.log('New record added:', payload);
+          setTotalPoin((payload.new.poin));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'poin' },
+        (payload) => {
+          console.log('Record updated:', payload);
+          FetchPoin();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+
+  }, [])
+
 
 
   return (
@@ -115,14 +168,14 @@ const HomeScreen = () => {
                   </Heading>
                   <Text size="sm" color='white'>Quizz Ranking</Text>
                   <HStack mt={20}>
-                    <TouchableOpacity style={{ backgroundColor: '#c084fc', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }}>
+                    <TouchableOpacity style={{ backgroundColor: '#c084fc', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }} onPress={() => navigation.navigate('StackNav', { screen: 'FinishScreen' })}>
                       <Text color='white' size='sm'>Mainkan</Text>
                     </TouchableOpacity>
                   </HStack>
                 </Card>
                 <Card size="md" variant="elevated" width={'48%'} bgColor='$yellow400' >
                   <Heading mb="$1" size="md">
-                    2,450
+                    {totalPoin}
                   </Heading>
                   <Text size="sm">Total poin</Text>
                   <Heading size='sm'>7 / 25</Heading>
@@ -135,9 +188,9 @@ const HomeScreen = () => {
                 Battle Quizz
               </TextHeading>
               <Card size="md" variant="elevated" bgColor='$red400' >
-                <Heading mb="$1" size="md" color='white'>
+                <TextHeading size="md" style={{ color: 'white', marginBottom: 4 }}>
                   Battle Quizz
-                </Heading>
+                </TextHeading>
                 <Text size="sm" color='white'>Invite teman kamu dan mainkan Quizz seputar Lampung bersama</Text>
                 <HStack mt={16}>
                   <TouchableOpacity style={{ backgroundColor: '#fca5a5', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }}>
@@ -151,16 +204,21 @@ const HomeScreen = () => {
                 Quizz
               </TextHeading>
               {tema.map((value, index) => (
-                <TouchableOpacity key={index} onPress={() => navigation.navigate('StackNav', { screen: 'QuizScreen', params: { name: value?.nama_tema, code_soal: value?.id } })}>
+                <TouchableOpacity key={index} onPress={() => { value?.nama_tema && value.nama_tema.includes('Battle') ? navigation.navigate('TabNav', { screen: 'Battle' }) : navigation.navigate('StackNav', { screen: 'QuizScreen', params: { name: value?.nama_tema, code_soal: value?.id } }) }}>
                   <Card size="md" variant="filled" >
                     <HStack alignItems='center' space='xl'>
                       <IconCustom As={FontAwesome6} name={value?.icon_name} size={25} />
-                      <VStack>
-                        <Heading mb="$1" size="md" color='$yellow600' >
+                      <VStack width={'75%'}>
+                        <TextHeading size="md" style={{ color: '#eab308' }} >
                           {value?.nama_tema}
-                        </Heading>
-                        <Text size="sm" >{value?.deskripsi}</Text>
+                        </TextHeading>
+                        <Text size="xs" >{value?.deskripsi}</Text>
                       </VStack>
+                      {selesai.map((item, keys) => (
+                        item?.code_soal == value?.id &&
+                        <IconCustom key={keys} As={Ionicons} name='checkmark-sharp' size={16} color='green' />
+                      ))}
+
                     </HStack>
                   </Card>
                 </TouchableOpacity>

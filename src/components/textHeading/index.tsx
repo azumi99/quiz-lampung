@@ -4,18 +4,18 @@ import { Platform, TextStyle } from "react-native";
 
 type Props = {
   size?:
-    | "xs"
-    | "sm"
-    | "md"
-    | "lg"
-    | "xl"
-    | "2xl"
-    | "3xl"
-    | "2xs"
-    | "4xl"
-    | "5xl"
-    | "6xl"
-    | undefined;
+  | "xs"
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl"
+  | "3xl"
+  | "2xs"
+  | "4xl"
+  | "5xl"
+  | "6xl"
+  | undefined;
   children?: string | React.ReactNode;
   style?: TextStyle;
 };

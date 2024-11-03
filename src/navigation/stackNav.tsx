@@ -18,6 +18,7 @@ import {
 import { Text } from '@gluestack-ui/themed';
 import { DetailScreen } from '@screens/Details';
 import { QuizScreen } from '@screens/Quiz';
+import { FinishScreen } from '@screens/Finish';
 const Stack = createNativeStackNavigator();
 export const StackNavigation = ({ route }) => {
   const navigation = useNavigation<any>();
@@ -69,6 +70,13 @@ export const StackNavigation = ({ route }) => {
       <Stack.Screen
         name="QuizScreen"
         component={QuizScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="FinishScreen"
+        component={FinishScreen}
         options={{
           headerShown: false,
         }}

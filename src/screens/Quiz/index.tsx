@@ -63,7 +63,7 @@ const QuizScreen = ({ route }) => {
     const CardComponent = ({ index, title, answer }) => {
         const isSelected = selected === index;
         const isAnswer = index === answer;
-        console.log('mm', jawaban?.[0]?.answer == index);
+        console.log('mm', jawaban?.[0]?.answer);
         return (
             <TouchableOpacity onPress={() => handlePress(index, answer)} disabled={selected != null || jawaban?.[0]?.answer != undefined}>
                 <Card size="md" variant="filled" style={styles.card} >
@@ -71,9 +71,10 @@ const QuizScreen = ({ route }) => {
                         {title}
                     </Text>
                     <Animated.View style={[styles.iconContainer, { opacity: fadeAnim }]}>
-                        {isAnswer && <Ionicons name="checkmark-circle" size={24} color="green" />}
+                        {isAnswer && jawaban?.[0]?.answer != undefined && < Ionicons name="checkmark-circle" size={24} color="green" />}
                         {jawaban?.[0]?.answer == index && jawaban?.[0]?.answer != answer && <Ionicons name="close-sharp" size={24} color="red" />}
                     </Animated.View>
+
 
                     {(isSelected || isAnswer) && (
                         <Animated.View
@@ -246,7 +247,7 @@ const QuizScreen = ({ route }) => {
             </View>
             <View marginHorizontal={16} marginVertical={16}>
                 {dataSoal.length > 0 &&
-                    <TouchableOpacity disabled={selected == null && jawaban?.[0]?.answer == undefined} onPress={currentIndex + 1 == totalPage ? () => { submit(); navigation.navigate('StackNav', { screen: 'FinishScreen', params: { name: route.params.name, code_soal: route.params.code_soal, poin: poin } }) } : nextQuestion} style={{ padding: 10, backgroundColor: '#eab308', borderRadius: 10, justifyContent: 'flex-end' }}>
+                    <TouchableOpacity disabled={selected == null && jawaban?.[0]?.answer == undefined} onPress={currentIndex + 1 == totalPage ? () => { submit(); navigation.navigate('StackNav', { screen: 'FinishScreen', params: { name: route.params.name, code_soal: route.params.code_soal, poin: poin } }) } : nextQuestion} style={{ padding: 10, backgroundColor: selected == null && jawaban?.[0]?.answer == undefined ? '#fef08a' : '#eab308', borderRadius: 10, justifyContent: 'flex-end' }}>
                         <Text textAlign="center" color="white">{currentIndex + 1 == totalPage ? 'Selesai' : 'Selanjutnya'} </Text>
                     </TouchableOpacity>}
             </View>

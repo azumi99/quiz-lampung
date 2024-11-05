@@ -47,6 +47,7 @@ const HomeScreen = () => {
   const { user } = UserStore();
   const [totalPoin, setTotalPoin] = useState(0);
   const [selesai, setSelesai] = useState<any>([]);
+  const [done, setDone] = useState(0);
 
   const { tema, setTema } = TemaStore();
   console.log('tem', tema)
@@ -96,6 +97,7 @@ const HomeScreen = () => {
           setSelesai(data);
           if (data?.[0]?.poin == undefined) {
             setTotalPoin(0)
+            // setDone(data?.[0]?.)
           } else {
             const totalPoin = data.reduce((accumulator, value) => accumulator + (value.poin || 0), 0);
             setTotalPoin(totalPoin);
@@ -134,7 +136,15 @@ const HomeScreen = () => {
 
   }, [])
 
+  const navigationDone = () => {
+    tema.map((value,) => (
+      selesai.map((item) => (
+        navigation.navigate('StackNav', { screen: 'FinishScreen', params: { name: value?.nama_tema, code_soal: item?.poin } })
+      ))
+    ))
+  }
 
+  console.log('tema', tema)
 
   return (
     <SafeAreaCustom>
@@ -204,25 +214,59 @@ const HomeScreen = () => {
                 Quizz
               </TextHeading>
               {tema.map((value, index) => (
-                <TouchableOpacity key={index} onPress={() => { value?.nama_tema && value.nama_tema.includes('Battle') ? navigation.navigate('TabNav', { screen: 'Battle' }) : navigation.navigate('StackNav', { screen: 'QuizScreen', params: { name: value?.nama_tema, code_soal: value?.id } }) }}>
-                  <Card size="md" variant="filled" >
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    // Tentukan apakah `FinishScreen` harus diakses
+                    if (selesai.some(item => item?.code_soal === value?.id)) {
+                      navigation.navigate('StackNav', {
+                        screen: 'FinishScreen',
+                        params: {
+                          name: value?.nama_tema,
+                          code_soal: selesai.find(item => item.code_soal === value.id)?.code_soal,
+                          poin: selesai.find(item => item.code_soal === value.id)?.poin
+                        },
+                      });
+                    }
+                    // Tentukan apakah `Battle` harus diakses
+                    else if (value?.nama_tema && value.nama_tema.includes('Battle')) {
+                      navigation.navigate('TabNav', {
+                        screen: 'Battle'
+
+                      });
+                    }
+                    // Navigasi default ke `QuizScreen`
+                    else {
+                      navigation.navigate('StackNav', {
+                        screen: 'QuizScreen',
+                        params: {
+                          name: value?.nama_tema,
+                          code_soal: value?.id,
+                        },
+                      });
+                    }
+                  }}
+                >
+                  <Card size="md" variant="filled">
                     <HStack alignItems='center' space='xl'>
                       <IconCustom As={FontAwesome6} name={value?.icon_name} size={25} />
                       <VStack width={'75%'}>
-                        <TextHeading size="md" style={{ color: '#eab308' }} >
+                        <TextHeading size="md" style={{ color: '#eab308' }}>
                           {value?.nama_tema}
                         </TextHeading>
-                        <Text size="xs" >{value?.deskripsi}</Text>
+                        <Text size="xs">{value?.deskripsi}</Text>
                       </VStack>
                       {selesai.map((item, keys) => (
-                        item?.code_soal == value?.id &&
-                        <IconCustom key={keys} As={Ionicons} name='checkmark-sharp' size={16} color='green' />
+                        item?.code_soal == value?.id && (
+                          <IconCustom key={keys} As={Ionicons} name='checkmark-sharp' size={16} color='green' />
+                        )
                       ))}
-
                     </HStack>
                   </Card>
                 </TouchableOpacity>
               ))}
+
+
 
 
             </VStack>

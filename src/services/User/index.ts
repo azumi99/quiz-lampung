@@ -1,4 +1,4 @@
-import {instance} from '@config/intance';
+import { instance } from '@config/intance';
 import userInterface from './interface';
 import registerInterface from './interface';
 

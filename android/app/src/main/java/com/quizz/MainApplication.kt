@@ -1,4 +1,4 @@
-package com.inventory
+package com.quizz
 
 import android.app.Application
 import com.facebook.react.PackageList

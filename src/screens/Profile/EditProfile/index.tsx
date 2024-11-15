@@ -1,8 +1,8 @@
-import {InputDefault} from '@components/input/inputDefault';
+import { InputDefault } from '@components/input/inputDefault';
 import SafeAreaCustom from '@components/safeArea';
-import {TextHeading} from '@components/textHeading';
-import {baseURL} from '@config/intance';
-import {EditProfileStore, UserStore} from '@config/store';
+import { TextHeading } from '@components/textHeading';
+import { baseURL } from '@config/intance';
+import { EditProfileStore, UserStore } from '@config/store';
 import {
   Avatar,
   AvatarFallbackText,
@@ -12,25 +12,25 @@ import {
   VStack,
   View,
 } from '@gluestack-ui/themed';
-import {useNavigation} from '@react-navigation/native';
-import {updateUser} from '@services/User';
+import { useNavigation } from '@react-navigation/native';
+import { updateUser } from '@services/User';
 import userInterface from '@services/User/interface';
 import axios from 'axios';
-import React, {useEffect, useState} from 'react';
-import {TouchableOpacity} from 'react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
+import React, { useEffect, useState } from 'react';
+import { TouchableOpacity } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import Snackbar from 'react-native-snackbar';
-import {err} from 'react-native-svg/lib/typescript/xml';
+import { err } from 'react-native-svg/lib/typescript/xml';
 
 const EditProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, setUser} = UserStore();
+  const { user, setUser } = UserStore();
   const [name, setName] = useState(user?.name);
   const [email, setEmail] = useState(user?.email);
   const [role, setRole] = useState(user?.role);
   const [url, setUrl] = useState(user?.url as string);
   const [avatarKey, setAvatarKey] = useState(Date.now());
-  const {param, setParam} = EditProfileStore();
+  const { param, setParam } = EditProfileStore();
   const ChoseImage = async () => {
     try {
       const result = await launchImageLibrary({
@@ -136,13 +136,13 @@ const EditProfileScreen = () => {
                 defaultValue={user?.email}
                 changeText={value => setEmail(value)}
               />
-              <InputDefault
+              {/* <InputDefault
                 isDisabled
                 label="Role"
                 variant="underlined"
                 defaultValue={user?.role}
                 changeText={value => setRole(value)}
-              />
+              /> */}
             </VStack>
           </VStack>
         </View>
@@ -151,4 +151,4 @@ const EditProfileScreen = () => {
   );
 };
 
-export {EditProfileScreen};
+export { EditProfileScreen };

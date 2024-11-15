@@ -12,6 +12,7 @@ import {
   EditProfileStore,
   MessageStore,
   NotifStore,
+  UserStore,
   navigateIdRequestStore,
 } from '@config/store';
 
@@ -19,6 +20,13 @@ import { Text } from '@gluestack-ui/themed';
 import { DetailScreen } from '@screens/Details';
 import { QuizScreen } from '@screens/Quiz';
 import { FinishScreen } from '@screens/Finish';
+import { ChangePasswordScreen } from '@screens/Profile/ChangePassword';
+import { EditProfileScreen } from '@screens/Profile/EditProfile';
+import { InvitationNotif } from '@screens/Battle/Invitation';
+import { StarterScreen } from '@screens/Battle/Starter';
+import { supabase } from '@config/supabase';
+import { ShowToast } from '@components/toast';
+import { BattleRoom } from '@screens/Battle/BattleRoom';
 const Stack = createNativeStackNavigator();
 export const StackNavigation = ({ route }) => {
   const navigation = useNavigation<any>();
@@ -31,6 +39,29 @@ export const StackNavigation = ({ route }) => {
   const { setAdd } = AddAccountStore();
   const { setMessageData } = MessageStore();
   const { setNotif } = NotifStore();
+  const { user } = UserStore()
+  const DeleteRoom = async () => {
+    try {
+      const { data, error, status } = await supabase
+        .from('battle')
+        .delete()
+        .eq('id', route.params.params.idbattle)
+        .eq('status', true);
+
+      if (error) {
+        ShowToast('Fail cancel room')
+        console.log('error delete room', error)
+      }
+      console.log('status', status)
+      if (status == 204) {
+        ShowToast('Room battle cancel')
+        return data;
+      }
+    } catch (error) {
+      ShowToast('Fail cancel room')
+      console.log('error delete room', error)
+    }
+  };
   return (
     <Stack.Navigator
       screenOptions={{
@@ -68,8 +99,55 @@ export const StackNavigation = ({ route }) => {
         }}
       />
       <Stack.Screen
+        name="EditProfileScreen"
+        component={EditProfileScreen}
+        options={{
+          title: 'Edit Profile',
+          headerBackVisible: false,
+          headerShown: true,
+          headerTitleAlign: 'center',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text>Cancel</Text>
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => setParam(true)}>
+              <Text>Save</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="ChangePasswordScreen"
+        component={ChangePasswordScreen}
+        options={{
+          title: 'Change Password',
+          headerBackVisible: false,
+          headerShown: true,
+          headerTitleAlign: 'center',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text>Cancel</Text>
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => setChange(true)}>
+              <Text>Save</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
         name="QuizScreen"
         component={QuizScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BattleRoom"
+        component={BattleRoom}
         options={{
           headerShown: false,
         }}
@@ -79,6 +157,46 @@ export const StackNavigation = ({ route }) => {
         component={FinishScreen}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="InvitationNotif"
+        component={InvitationNotif}
+        options={{
+          title: route.params.title,
+          headerBackVisible: true,
+          headerShown: true,
+          headerTitleAlign: 'center',
+
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                setIdNav(0);
+                navigation.goBack();
+              }}>
+              <IconCustom As={Ionicons} name="chevron-back" size={20} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="StarterScreen"
+        component={StarterScreen}
+        options={{
+          title: '1 vs 1',
+          headerBackVisible: false,
+          headerShown: true,
+          headerTitleAlign: 'center',
+
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                DeleteRoom();
+                navigation.goBack();
+              }}>
+              <Text>Cancel</Text>
+            </TouchableOpacity>
+          ),
         }}
       />
 

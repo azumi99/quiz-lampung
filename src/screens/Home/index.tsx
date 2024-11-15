@@ -35,6 +35,7 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import { baseURL } from '@config/intance';
+import { FcmSave } from '@services/FCM';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
@@ -50,7 +51,7 @@ const HomeScreen = () => {
   const [done, setDone] = useState(0);
 
   const { tema, setTema } = TemaStore();
-  console.log('tem', tema)
+  // console.log('tem', fcmtoken)
 
   useEffect(() => {
     const FetchTema = async () => {
@@ -58,7 +59,6 @@ const HomeScreen = () => {
         const response = await supabase
           .from('tema')
           .select('*');
-        console.log('tema', response)
         response.status == 200 && setTema(response?.data);
       } catch (error) {
         console.log('Error fetching users');
@@ -83,8 +83,20 @@ const HomeScreen = () => {
       supabase.removeChannel(subscription);
     };
   }, []);
+  const errorFunc = () => {
+    console.log('error')
+  }
 
   useEffect(() => {
+    const FcmTokenSave = async () => {
+      try {
+        const response = await FcmSave(errorFunc, user?.id, fcmtoken.toString());
+        console.log(response);
+      } catch (error) {
+        console.log('FcmTokenSave error conection', error);
+      }
+    };
+    FcmTokenSave();
     const FetchPoin = async () => {
       try {
         const { data, error, status } = await supabase
@@ -136,15 +148,7 @@ const HomeScreen = () => {
 
   }, [])
 
-  const navigationDone = () => {
-    tema.map((value,) => (
-      selesai.map((item) => (
-        navigation.navigate('StackNav', { screen: 'FinishScreen', params: { name: value?.nama_tema, code_soal: item?.poin } })
-      ))
-    ))
-  }
 
-  console.log('tema', tema)
 
   return (
     <SafeAreaCustom>
@@ -177,19 +181,14 @@ const HomeScreen = () => {
                     10
                   </Heading>
                   <Text size="sm" color='white'>Quizz Ranking</Text>
-                  <HStack mt={20}>
-                    <TouchableOpacity style={{ backgroundColor: '#c084fc', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }} onPress={() => navigation.navigate('StackNav', { screen: 'FinishScreen' })}>
-                      <Text color='white' size='sm'>Mainkan</Text>
-                    </TouchableOpacity>
-                  </HStack>
+
                 </Card>
                 <Card size="md" variant="elevated" width={'48%'} bgColor='$yellow400' >
                   <Heading mb="$1" size="md">
                     {totalPoin}
                   </Heading>
                   <Text size="sm">Total poin</Text>
-                  <Heading size='sm'>7 / 25</Heading>
-                  <Text size="sm">Terselesaikan</Text>
+
                 </Card>
               </HStack>
             </VStack>
@@ -203,7 +202,7 @@ const HomeScreen = () => {
                 </TextHeading>
                 <Text size="sm" color='white'>Invite teman kamu dan mainkan Quizz seputar Lampung bersama</Text>
                 <HStack mt={16}>
-                  <TouchableOpacity style={{ backgroundColor: '#fca5a5', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }}>
+                  <TouchableOpacity style={{ backgroundColor: '#fca5a5', paddingHorizontal: 16, paddingVertical: 3, borderRadius: 6 }} onPress={() => navigation.navigate('TabNav', { screen: 'Battle' })}>
                     <Text color='white' size='sm'>Mainkan</Text>
                   </TouchableOpacity>
                 </HStack>
@@ -217,7 +216,6 @@ const HomeScreen = () => {
                 <TouchableOpacity
                   key={index}
                   onPress={() => {
-                    // Tentukan apakah `FinishScreen` harus diakses
                     if (selesai.some(item => item?.code_soal === value?.id)) {
                       navigation.navigate('StackNav', {
                         screen: 'FinishScreen',
@@ -228,14 +226,12 @@ const HomeScreen = () => {
                         },
                       });
                     }
-                    // Tentukan apakah `Battle` harus diakses
                     else if (value?.nama_tema && value.nama_tema.includes('Battle')) {
                       navigation.navigate('TabNav', {
                         screen: 'Battle'
 
                       });
                     }
-                    // Navigasi default ke `QuizScreen`
                     else {
                       navigation.navigate('StackNav', {
                         screen: 'QuizScreen',

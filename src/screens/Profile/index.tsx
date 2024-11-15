@@ -54,6 +54,7 @@ const ProfileScreen = () => {
         navigation.replace('LoginScreen');
       }
       console.log('LogoutFunc error conection');
+      setUser(param);
     }
   };
   const handleMode = () => {

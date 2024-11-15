@@ -157,12 +157,12 @@ const MessageStore = create<any>()(set => ({
   setMessageData: (value: any) => set({ messageData: value }),
 }));
 interface NotifInterface {
-  notif: string;
+  notifs: string;
   setNotif: (value: string) => void;
 }
 const NotifStore = create<NotifInterface>()(set => ({
-  notif: '',
-  setNotif: (value: string) => set({ notif: value }),
+  notifs: '',
+  setNotif: (value: string) => set({ notifs: value }),
 }));
 
 export {

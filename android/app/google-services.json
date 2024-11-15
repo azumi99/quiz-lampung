@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "453359070943",
-    "project_id": "inventory-att",
-    "storage_bucket": "inventory-att.appspot.com"
+    "project_number": "588381841362",
+    "project_id": "quizz-lampung",
+    "storage_bucket": "quizz-lampung.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:453359070943:android:3c6d1b713d44474860836a",
+        "mobilesdk_app_id": "1:588381841362:android:e73f44ca10ef5d3eae4a0b",
         "android_client_info": {
-          "package_name": "com.inventory"
+          "package_name": "com.quizz"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA1H40F6vS2ZLPau4edaW57HZAYjNtnDzg"
+          "current_key": "AIzaSyDbI6XW7kWQokt6ZzPtfOLfRE2ChdHkCIg"
         }
       ],
       "services": {

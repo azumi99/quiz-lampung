@@ -15,18 +15,24 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { LoginScreen } from '@screens/Login';
 import { SplashScreen } from '@screens/splashScreen';
+import { OnlineStatusUpdater } from '@config/statusOnline';
+import { supabase } from '@config/supabase';
+import { AppState } from 'react-native';
 
 const NavigatorScreen = () => {
   const Stack = createStackNavigator();
   const { token } = TokenJwt();
   const { messageData, setMessageData } = MessageStore();
   const { setFcmtoken } = TokenFCMStore();
-  const { notif, setNotif } = NotifStore();
+  const { setNotif } = NotifStore();
+  const [appState, setAppState] = useState(AppState.currentState);
+  const { user } = UserStore()
+  const userId = user?.id;
   const RemoteNotification = () => {
     PushNotification.configure({
       onRegister: function (token) {
         setFcmtoken(token.token);
-        // console.log(token);
+        console.log(token);
       },
       onNotification: function (notification) {
         const { message, title, id } = notification;
@@ -48,13 +54,8 @@ const NavigatorScreen = () => {
           title: strTitle,
           message: strBody,
         });
-        if (notification.data.param !== '0') {
-          setMessageData(id);
-        }
-        if (notification.data.param !== '1') {
-          setNotif(id);
-        }
 
+        setNotif(id);
         console.log(
           'REMOTE NOTIFICATION ==>',
           title,
@@ -72,6 +73,45 @@ const NavigatorScreen = () => {
     checkApplicationPermission();
     RemoteNotification();
   }, []);
+
+  const updateOnlineStatus = async (userId, isOnline) => {
+    const { error } = await supabase
+      .from('user_status')
+      .upsert(
+        {
+          user_id: userId,
+          is_online: isOnline,
+          last_seen: new Date()
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (error) {
+      console.log('Error updating online status:', error.message);
+    }
+  };
+
+  useEffect(() => {
+
+    updateOnlineStatus(userId, true);
+
+    const handleAppStateChange = (nextAppState) => {
+      if (appState.match(/active/) && nextAppState === 'background') {
+        updateOnlineStatus(userId, false);
+      } else if (nextAppState === 'active') {
+        updateOnlineStatus(userId, true);
+      }
+      setAppState(nextAppState);
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      updateOnlineStatus(userId, false);
+      subscription.remove();
+    };
+  }, [appState, userId]);
+  console.log(user)
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -80,7 +120,6 @@ const NavigatorScreen = () => {
           component={SplashScreen}
           options={{ headerShown: false }}
         />
-
         <Stack.Screen
           name="LoginScreen"
           component={LoginScreen}
